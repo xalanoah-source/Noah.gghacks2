@@ -17,13 +17,26 @@ jobs:
       - name: Unpack project
         run: |
           mkdir work
+          if [ -f project.b64 ]; then
+            tr -dc 'A-Za-z0-9+/=' < project.b64 > clean.b64
+            base64 -d clean.b64 > project.zip
+          fi
           unzip -q project.zip -d work
+          echo "Files in the zip:"
+          find work -maxdepth 3 | head -40
       - name: Build
-        working-directory: work
-        run: gradle build --no-daemon
+        run: |
+          SETTINGS=$(find work -name settings.gradle | head -n 1)
+          if [ -z "$SETTINGS" ]; then
+            echo "No settings.gradle found in the zip"
+            exit 1
+          fi
+          cd "$(dirname "$SETTINGS")"
+          echo "Building in: $(pwd)"
+          gradle build --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: PurpleClient-jar
           path: |
-            work/build/libs/*.jar
-            !work/build/libs/*-sources.jar
+            work/**/build/libs/*.jar
+            !work/**/build/libs/*-sources.jar
