@@ -17,7 +17,11 @@ jobs:
       - name: Unpack project
         run: |
           mkdir work
-          if [ -f project.b64 ]; then base64 -d project.b64 > project.zip; fi
+          if [ -f project.b64 ]; then
+            tr -dc 'A-Za-z0-9+/=' < project.b64 > clean.b64
+            echo "base64 characters found: $(wc -c < clean.b64) (expected 43336)"
+            base64 -d clean.b64 > project.zip
+          fi
           unzip -q project.zip -d work
       - name: Build
         working-directory: work
